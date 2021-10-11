@@ -102,6 +102,12 @@ class PatchedGeoArray:
             d[s0x:s1x + 1, s0y:s1y + 1] = data
             self._store_patch(p0x, p0y, d)
 
+    def insert_geotiff(self, filename: str):
+        import rasterio
+        with rasterio.open(filename) as tif:
+            bounds = tif.bounds.astype(int)
+            self.insert(bounds.left, bounds.bottom, tif.read[0][::-1, :].T)
+
 
 class NdArrayPatchedGeoArray(PatchedGeoArray):
     def __init__(self, box: BoundingBox, resolution: float, patch_size: int) -> None:
