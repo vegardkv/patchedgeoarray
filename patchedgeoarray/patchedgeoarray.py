@@ -1,3 +1,4 @@
+import pathlib
 from typing import List, Optional
 import numpy as np
 from dataclasses import dataclass
@@ -127,3 +128,24 @@ class NdArrayPatchedGeoArray(PatchedGeoArray):
         if out is None:
             raise OutOfBoundsError
         return out
+
+
+class FileBasedPatchedGeoArray(PatchedGeoArray):
+    def __init__(self, box: BoundingBox, resolution: float, patch_size: int, directory: str) -> None:
+        super().__init__(box, resolution, patch_size)
+        self._directory = pathlib.Path(directory)
+
+    def _data_file(self, i, j):
+        return self._directory / f'data_{i}_{j}.npy'
+
+    def _read_patch(self, i: int, j: int) -> np.ndarray:
+        return np.load(self._data_file(i, j))
+
+    def _store_patch(self, i: int, j: int, data: np.ndarray) -> None:
+        assert data.shape == (self._patch_size, self._patch_size)
+        fn = self._data_file(i, j)
+        if fn.is_file():
+            existing_data = np.load(fn)
+            already_set = ~np.isnan(existing_data)
+            data[already_set] = existing_data[already_set]
+        np.save(fn, data)
