@@ -1,5 +1,5 @@
 import pathlib
-from typing import List, Optional
+from typing import List, Optional, Dict, Tuple
 import numpy as np
 from dataclasses import dataclass
 
@@ -114,23 +114,19 @@ class PatchedGeoArray:
 class NdArrayPatchedGeoArray(PatchedGeoArray):
     def __init__(self, box: BoundingBox, resolution: float, patch_size: int) -> None:
         super().__init__(box, resolution, patch_size)
-        self._arrays: List[List[Optional[np.ndarray]]] = []
+        self._arrays: Dict[Tuple[int, int], np.ndarray] = {}
 
     def _store_patch(self, i: int, j: int, data: np.ndarray) -> None:
         assert data.shape == (self._patch_size, self._patch_size)
-        while len(self._arrays) < i + 1:
-            self._arrays.append([])
-        while len(self._arrays[i]) < j + 1:
-            self._arrays[i].append(None)
-        if self._arrays[i][j] is None:
-            self._arrays[i][j] = data
+        if (i, j) not in self._arrays:
+            self._arrays[(i, j)] = data
         else:
-            undefined = np.isnan(self._arrays[i][j])
-            self._arrays[i][j][undefined] = data[undefined]
+            undefined = np.isnan(self._arrays[(i, j)])
+            self._arrays[(i, j)][undefined] = data[undefined]
 
     def _read_patch(self, i: int, j: int) -> np.ndarray:
         try:
-            out = self._arrays[i][j]
+            out = self._arrays[(i, j)]
         except IndexError:
             raise OutOfBoundsError
         if out is None:
