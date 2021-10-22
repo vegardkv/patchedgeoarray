@@ -135,9 +135,26 @@ class NdArrayPatchedGeoArray(PatchedGeoArray):
 
 
 class FileBasedPatchedGeoArray(PatchedGeoArray):
+    META_DATA_FILE = 'meta.json'
+
     def __init__(self, box: BoundingBox, resolution: float, patch_size: int, directory: str) -> None:
         super().__init__(box, resolution, patch_size)
         self._directory = pathlib.Path(directory)
+        meta_data_file = pathlib.Path(self._directory) / FileBasedPatchedGeoArray.META_DATA_FILE
+        if not meta_data_file.exists():
+            import json
+            json.dump(
+                dict(
+                    left=box.left,
+                    right=box.right,
+                    bottom=box.bottom,
+                    top=box.top,
+                    resolution=10,
+                    patch_size=2000,
+                ),
+                open(meta_data_file, 'w'),
+                indent=2
+            )
 
     def _data_file(self, i, j):
         return self._directory / f'data_{i}_{j}.npy'
@@ -153,3 +170,11 @@ class FileBasedPatchedGeoArray(PatchedGeoArray):
             already_set = ~np.isnan(existing_data)
             data[already_set] = existing_data[already_set]
         np.save(fn, data)
+
+    @staticmethod
+    def from_directory(directory: str) -> 'FileBasedPatchedGeoArray':
+        import json
+        meta_file = pathlib.Path(directory) / FileBasedPatchedGeoArray.META_DATA_FILE
+        meta = json.load(open(meta_file))
+        box = BoundingBox(meta['left'], meta['right'], meta['bottom'], meta['top'])
+        return FileBasedPatchedGeoArray(box, meta['resolution'], meta['patch_size'], directory)
