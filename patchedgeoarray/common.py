@@ -35,6 +35,10 @@ class GeoarrayConfig:
     s3_profile_name: str = ''
     s3_bucket_name: str = ''
 
+    def __post_init__(self):
+        if isinstance(self.outer_box, dict):
+            self.outer_box = BoundingBox(**self.outer_box)
+
 
 def patch_index(x, y, config: GeoarrayConfig):
     x = np.asarray(x)
