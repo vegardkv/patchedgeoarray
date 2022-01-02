@@ -39,6 +39,15 @@ class GeoarrayConfig:
         if isinstance(self.outer_box, dict):
             self.outer_box = BoundingBox(**self.outer_box)
 
+    @staticmethod
+    def from_json(config_path):
+        import json
+        config_path = pathlib.Path(config_path)
+        meta = json.load(open(config_path))
+        config = GeoarrayConfig(**meta)
+        config.file_directory = config_path.parent
+        return config
+
 
 def patch_index(x, y, config: GeoarrayConfig):
     x = np.asarray(x)
