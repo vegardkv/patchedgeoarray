@@ -34,7 +34,10 @@ def _s3_read(i: int, j: int, config: GeoarrayConfig) -> np.ndarray:
     import io
     import boto3
     # TODO: no existing boto3 session. Might impact quota? Performance?
-    session = boto3.session.Session(profile_name=config.s3_profile_name)
+    if config.s3_profile_name != '':
+        session = boto3.session.Session(profile_name=config.s3_profile_name)
+    else:
+        session = boto3.session.Session()
     s3_resource = session.resource('s3')
     key = common.patch_name(i, j, config)
     s3_obj = s3_resource.Object(bucket_name=config.s3_bucket_name, key=key)

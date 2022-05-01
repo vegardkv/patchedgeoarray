@@ -35,7 +35,9 @@ def insert(x0: float, y0: float, data: np.ndarray, config: GeoarrayConfig):
     else:
         s0x, s0y = common.local_index(x0, y0, config)
         s1x, s1y = common.local_index(x1, y1, config)
-        d = np.full((config.patch_size, config.patch_size), fill_value=np.nan)
+        d = np.full(
+            (config.patch_size, config.patch_size), fill_value=np.nan, dtype=data.dtype
+        )
         d[s0x:s1x + 1, s0y:s1y + 1] = data
         _store_patch(p0x, p0y, d, config)
 
