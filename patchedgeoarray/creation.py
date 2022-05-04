@@ -14,8 +14,8 @@ def insert_geotiff(tiff_file: str, config: GeoarrayConfig, dtype: Optional = Non
 
 
 def insert(x0: float, y0: float, data: np.ndarray, config: GeoarrayConfig):
-    assert np.isclose((x0 - config.outer_box.left) % config.resolution, 0)
-    assert np.isclose((y0 - config.outer_box.bottom) % config.resolution, 0)
+    if not np.isclose((x0 - config.outer_box.left) % config.resolution, 0):
+        x0, y0, data = _adjust_data(x0, y0, data, config)
     x1 = x0 + config.resolution * (data.shape[0] - 1)
     y1 = y0 + config.resolution * (data.shape[1] - 1)
     p0x, p0y = common.patch_index(x0, y0, config)
@@ -40,6 +40,21 @@ def insert(x0: float, y0: float, data: np.ndarray, config: GeoarrayConfig):
         )
         d[s0x:s1x + 1, s0y:s1y + 1] = data
         _store_patch(p0x, p0y, d, config)
+
+
+def _adjust_data(x0: float, y0: float, data: np.ndarray, config: GeoarrayConfig):
+    half_res = config.resolution / 2
+    assert np.isclose(
+        (x0 - config.outer_box.left) % config.resolution, half_res
+    )
+    assert np.isclose(
+        (y0 - config.outer_box.bottom) % config.resolution, half_res
+    )
+    return (
+        x0 + half_res,
+        y0 + half_res,
+        (data[:-1, :-1] + data[1:, :-1] + data[1:, 1:] + data[:-1, 1:]) / 2
+    )
 
 
 def _store_patch(i: int, j: int, data: np.ndarray, config: GeoarrayConfig) -> None:
